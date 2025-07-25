@@ -8,6 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <iomanip>
+#include <map>
 
 std::string getCurrentTimestamp() {
     auto now = std::chrono::system_clock::now();
@@ -21,6 +22,50 @@ std::string getCurrentTimestamp() {
     oss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%S");
     oss << '.' << std::setw(3) << std::setfill('0') << ms.count() << "Z";
     return oss.str();
+}
+
+std::string trim(const std::string &str) {
+    size_t start = str.find_first_not_of(" \t");
+    if (start == std::string::npos) return "";
+    size_t end = str.find_last_not_of(" \t");
+    return str.substr(start, end - start + 1);
+}
+
+int parseInt(const std::string &str) {
+    return std::stoi(trim(str));
+}
+
+std::map<std::string, std::map<std::string, int>> readConfig(const std::string &filename) {
+    std::map<std::string, std::map<std::string, int>> config;
+    std::ifstream file(filename);
+    std::string line;
+    std::string currentKey;
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file '" << filename << "'.\n";
+        return config;
+    }
+    while (std::getline(file, line)) {
+        line = trim(line);
+        
+        if (line.empty() || line[0] == '#') continue;
+        if (line.front() == '[' && line.back() == ']') {
+            currentKey = line;
+            continue;
+        }
+        size_t eqPos = line.find('=');
+        if (eqPos != std::string::npos) {
+            std::string key = trim(line.substr(0, eqPos));
+            std::string value = trim(line.substr(eqPos + 1));
+            try {
+                config[currentKey][key] = parseInt(value);
+            } catch (const std::invalid_argument&) {
+                std::cerr << "Warning: Invalid integer value for key '" << key << "' in section '" << currentKey << "'.\n";
+            } catch (const std::out_of_range&) {
+                std::cerr << "Warning: Integer value out of range for key '" << key << "' in section '" << currentKey << "'.\n";
+            }
+        }
+    }
+    return config;
 }
 
 std::string getEnvValue(const std::string& key) {
@@ -210,29 +255,45 @@ std::string generateJsonFor141_13(int edgeId){
     return oss.str();
 }
 
-std::string generateRandomJson() {
-    std::string (*generatorsArray[])(int) = {generateJsonFor144, generateJsonFor146, generateJsonFor148, generateJsonFor164, generateJsonFor165, generateJsonFor140_8, generateJsonFor140_10, generateJsonFor140_9, generateJsonFor141_8, generateJsonFor141_9, generateJsonFor141_10, generateJsonFor140_13, generateJsonFor140_14, generateJsonFor141_13};
-    int edgeId = rand() % 10;
+std::string generateJsonForTag(std::string tagKey, std::map<std::string, int> tag, int edgeId){
+    std::string timestamp = getCurrentTimestamp();
+    int value = tag["min"] + rand()%(tag["max"]-tag["min"]+1);
+    
+    std::ostringstream oss;
+    oss << "{";
+    oss << "\"edgeId\":" << edgeId << ",";
+    oss << "\"tag\":\"DC_out_100ms"<<tagKey<<"\",";
+    oss << "\"timestamp\":\"" << timestamp << "\",";
+    oss << "\"value\":" << value;
+    oss << "}";
+    return oss.str();
+}
+
+std::string generateRandomJson(std::map<std::string, std::map<std::string, int>> tags) {
+    int edgeId = 1 + rand() % 10;
     std::ostringstream oss;
     oss << "{";
     oss << "\"data\":[";
-    for (size_t i = 0; i < 14; ++i) {
-        std::string subJson = generatorsArray[i](edgeId);
+    for (const std::pair<std::string, std::map<std::string, int>>& section : tags) {
+        std::string subJson = generateJsonForTag(section.first, section.second, edgeId);
         oss << subJson;
-        if (i!=13){
-            oss << ",";
-        }
+        oss << ",";
     }
-
+    std::string str = oss.str();
+    if (!str.empty()) {
+        str.erase(str.size() - 1); 
+    }
+    oss.str(str);
+    oss.clear();
     oss << "]";
     oss << "}";
     return oss.str();
 }
 
-void sendRequests(const std::string& url, const std::string& token) {
+void sendRequests(const std::string& url, const std::string& token, std::map<std::string, std::map<std::string, int>> tags) {
     CURL* curl = curl_easy_init();
     if (curl) {
-        std::string json = generateRandomJson();
+        std::string json = generateRandomJson(tags);
         struct curl_slist* headers = NULL;
         std::string authHeader = "Authorization: Bearer " + token;
         headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -246,6 +307,8 @@ void sendRequests(const std::string& url, const std::string& token) {
 }
 
 int main() {
+    std::map<std::string, std::map<std::string, int>> tags;
+    tags = readConfig("config.txt");
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(0));
     int counte = 0;
@@ -264,7 +327,7 @@ int main() {
     while (true) {
         auto cycleStart = std::chrono::high_resolution_clock::now();
         for(int i=0;i<counte;i++){
-            sendRequests(apiUrl, token);
+            sendRequests(apiUrl, token, tags);
         }
         auto cycleEnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = cycleEnd - cycleStart;
