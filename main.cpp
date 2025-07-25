@@ -216,17 +216,16 @@ std::string generateRandomJson() {
     std::ostringstream oss;
     oss << "{";
     oss << "\"data\":[";
-    for (size_t i = 0; i < 15; ++i) {
+    for (size_t i = 0; i < 14; ++i) {
         std::string subJson = generatorsArray[i](edgeId);
         oss << subJson;
-        if (i!=14){
+        if (i!=13){
             oss << ",";
         }
     }
 
     oss << "]";
     oss << "}";
-
     return oss.str();
 }
 
@@ -235,7 +234,6 @@ void sendRequests(const std::string& url, const std::string& token) {
     if (curl) {
         std::string json = generateRandomJson();
         struct curl_slist* headers = NULL;
-
         std::string authHeader = "Authorization: Bearer " + token;
         headers = curl_slist_append(headers, "Content-Type: application/json");
         headers = curl_slist_append(headers, authHeader.c_str());
@@ -250,7 +248,7 @@ void sendRequests(const std::string& url, const std::string& token) {
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(0));
-    int counte = 0
+    int counte = 0;
     std::string apiUrl = getEnvValue("API_URL");
     std::string token = getEnvValue("INFRA_SECRET_KEY");
     std::string counteStr = getEnvValue("COUNTE_OF_DRILL");
@@ -263,7 +261,6 @@ int main() {
         std::cerr << "Error: API_URL or INFRA_SECRET_KEY not found in environment variables" << std::endl;
         return 1;
     }
-
     while (true) {
         auto cycleStart = std::chrono::high_resolution_clock::now();
         for(int i=0;i<counte;i++){
@@ -271,14 +268,11 @@ int main() {
         }
         auto cycleEnd = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = cycleEnd - cycleStart;
-
-        
-
         auto remaining = std::chrono::milliseconds(500) - std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
         if (remaining.count() > 0) {
             std::this_thread::sleep_for(remaining);
         }
-        std::cout << " Req time: " << elapsed.count()+remaining.count() << " ms " << std::endl;
+        std::cout<<std::endl <<"-----"<<std::endl<< " Req time: " << elapsed.count()+remaining.count() << " ms "<<std::endl <<"-----" << std::endl;
     }
 
     curl_global_cleanup();
