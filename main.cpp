@@ -27,7 +27,7 @@ std::string getEnvValue(const std::string& key) {
     const char* val = std::getenv(key.c_str());
     return val ? std::string(val) : "";
 }
-std:string generateJsonFor144(int edgeId){
+std::string generateJsonFor144(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%2;
     
@@ -40,7 +40,7 @@ std:string generateJsonFor144(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor146(int edgeId){
+std::string generateJsonFor146(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%2;
     
@@ -53,7 +53,7 @@ std:string generateJsonFor146(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor148(int edgeId){
+std::string generateJsonFor148(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 10 + rand()%41;
     
@@ -66,7 +66,7 @@ std:string generateJsonFor148(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor164(int edgeId){
+std::string generateJsonFor164(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 20 + rand()%61;
     
@@ -79,7 +79,7 @@ std:string generateJsonFor164(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor165(int edgeId){
+std::string generateJsonFor165(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 5 + rand()%21;
     
@@ -92,7 +92,7 @@ std:string generateJsonFor165(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor140_8(int edgeId){
+std::string generateJsonFor140_8(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%101;
     
@@ -105,7 +105,7 @@ std:string generateJsonFor140_8(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor140_10(int edgeId){
+std::string generateJsonFor140_10(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%6;
     
@@ -118,7 +118,7 @@ std:string generateJsonFor140_10(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor140_9(int edgeId){
+std::string generateJsonFor140_9(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 50 + rand()%101;
     
@@ -131,7 +131,7 @@ std:string generateJsonFor140_9(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor141_8(int edgeId){
+std::string generateJsonFor141_8(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%2;
     
@@ -144,7 +144,7 @@ std:string generateJsonFor141_8(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor141_9(int edgeId){
+std::string generateJsonFor141_9(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 15 + rand()%61;
     
@@ -157,7 +157,7 @@ std:string generateJsonFor141_9(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor141_10(int edgeId){
+std::string generateJsonFor141_10(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 100 + rand()%(101);
     
@@ -170,7 +170,7 @@ std:string generateJsonFor141_10(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor140_13(int edgeId){
+std::string generateJsonFor140_13(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%(11);
     
@@ -183,7 +183,7 @@ std:string generateJsonFor140_13(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor140_14(int edgeId){
+std::string generateJsonFor140_14(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = rand()%(501);
     
@@ -196,7 +196,7 @@ std:string generateJsonFor140_14(int edgeId){
     oss << "}";
     return oss.str();
 }
-std:string generateJsonFor141_13(int edgeId){
+std::string generateJsonFor141_13(int edgeId){
     std::string timestamp = getCurrentTimestamp();
     int value = 5 + rand()%(46);
     
@@ -246,8 +246,10 @@ void sendRequests(const std::string& url, const std::string& token) {
             curl_multi_add_handle(multi_handle, curl);
         }
     }
-    
-    curl_multi_perform(multi_handle, nullptr);
+    int still_running;
+    do {
+    curl_multi_perform(multi_handle, &still_running);
+    }while(still_running);
     curl_multi_cleanup(multi_handle);
     curl_slist_free_all(headers);
 }
@@ -255,7 +257,7 @@ void sendRequests(const std::string& url, const std::string& token) {
 int main() {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(0));
-    std::int counte = 0
+    int counte = 0
     std::string apiUrl = getEnvValue("API_URL");
     std::string token = getEnvValue("INFRA_SECRET_KEY");
     std::string counteStr = getEnvValue("COUNTE_OF_DRILL");
