@@ -211,47 +211,40 @@ std::string generateJsonFor141_13(int edgeId){
 }
 
 std::string generateRandomJson() {
+    std::string (*generatorsArray[])(int) = {generateJsonFor144, generateJsonFor146, generateJsonFor148, generateJsonFor164, generateJsonFor165, generateJsonFor140_8, generateJsonFor140_10, generateJsonFor140_9, generateJsonFor141_8, generateJsonFor141_9, generateJsonFor141_10, generateJsonFor140_13, generateJsonFor140_14, generateJsonFor141_13};
     int edgeId = rand() % 10;
-    std::string tag = "DC_out_100ms[" + std::to_string(rand() % 200) + "]";
-    std::string timestamp = getCurrentTimestamp();
-    float value = static_cast<float>(rand()) / RAND_MAX * 100.0f;
-
     std::ostringstream oss;
     oss << "{";
-    oss << "\"edgeId\":" << edgeId << ",";
-    oss << "\"tag\":\"" << tag << "\",";
-    oss << "\"timestamp\":\"" << timestamp << "\",";
-    oss << "\"value\":" << value;
+    oss << "\"data\":[";
+    for (size_t i = 0; i < 15; ++i) {
+        std::string subJson = generatorsArray[i](edgeId);
+        oss << subJson;
+        if (i!=14){
+            oss << ",";
+        }
+    }
+
+    oss << "]";
     oss << "}";
 
     return oss.str();
 }
 
 void sendRequests(const std::string& url, const std::string& token) {
-    std::string (*generatorsArray[])(int) = {generateJsonFor144, generateJsonFor146, generateJsonFor148, generateJsonFor164, generateJsonFor165, generateJsonFor140_8, generateJsonFor140_10, generateJsonFor140_9, generateJsonFor141_8, generateJsonFor141_9, generateJsonFor141_10, generateJsonFor140_13, generateJsonFor140_14, generateJsonFor141_13};
-    
-    CURLM *multi_handle = curl_multi_init();
-    int edgeId = rand() % 10;
-    for (size_t i = 0; i < 15; ++i) {
-        CURL* curl = curl_easy_init();
-        if (curl) {
-            std::string json = generatorsArray[i](edgeId);
-            struct curl_slist* headers = NULL;
-            std::string authHeader = "Authorization: Bearer " + token;
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-            headers = curl_slist_append(headers, authHeader.c_str());
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            curl_multi_add_handle(multi_handle, curl);
-        }
+    CURL* curl = curl_easy_init();
+    if (curl) {
+        std::string json = generateRandomJson();
+        struct curl_slist* headers = NULL;
+
+        std::string authHeader = "Authorization: Bearer " + token;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, authHeader.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_perform(curl);
+        curl_slist_free_all(headers);
     }
-    int still_running;
-    do {
-    curl_multi_perform(multi_handle, &still_running);
-    }while(still_running);
-    curl_multi_cleanup(multi_handle);
-    curl_slist_free_all(headers);
 }
 
 int main() {
